@@ -261,7 +261,7 @@
   const AGES = ["Under 1", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17"];
   function partyCounts() { return { adults: 1 + party.filter(m => m.type === "adult").length, kids: party.filter(m => m.type === "child").length }; }
   function renderParty() {
-    const list = $("#party-list");
+    const list = $("#party-list"); if (!list) return;
     list.innerHTML = party.map((m, i) => `
       <div class="party-row" data-i="${i}">
         <input class="input" type="text" placeholder="${m.type === "child" ? "Child's name" : "Name"}" value="${esc(m.name)}" data-field="name" aria-label="${m.type === "child" ? "Child's name" : "Guest name"}" autocomplete="off">
@@ -276,11 +276,12 @@
       : `${c.adults} adult${c.adults === 1 ? "" : "s"}${c.kids ? ` and ${c.kids} ${c.kids === 1 ? "child" : "children"}` : ""} in your party${names.length ? `: you, ${names.join(", ")}` : ""}.`;
   }
   function addMember(type) { party.push({ name: "", type, age: "" }); renderParty(); const rows = $$(".party-row"); const last = rows[rows.length - 1]; if (last) $("input", last).focus(); }
-  $("#party-add-adult").addEventListener("click", () => addMember("adult"));
-  $("#party-add-child").addEventListener("click", () => addMember("child"));
-  $("#party-list").addEventListener("input", e => { const row = e.target.closest(".party-row"); if (!row) return; const m = party[Number(row.dataset.i)]; if (!m) return; if (e.target.dataset.field === "name") m.name = e.target.value; if (e.target.dataset.field === "age") m.age = e.target.value; const c = partyCounts(); const names = party.map(x => x.name.trim()).filter(Boolean); $("#party-summary").textContent = `${c.adults} adult${c.adults === 1 ? "" : "s"}${c.kids ? ` and ${c.kids} ${c.kids === 1 ? "child" : "children"}` : ""} in your party${names.length ? `: you, ${names.join(", ")}` : ""}.`; });
-  $("#party-list").addEventListener("change", e => { const row = e.target.closest(".party-row"); if (!row) return; const m = party[Number(row.dataset.i)]; if (m && e.target.dataset.field === "age") m.age = e.target.value; });
-  $("#party-list").addEventListener("click", e => { const b = e.target.closest("[data-remove]"); if (!b) return; party.splice(Number(b.dataset.remove), 1); renderParty(); });
+  const on = (sel, evt, fn) => { const el = $(sel); if (el) el.addEventListener(evt, fn); };
+  on("#party-add-adult", "click", () => addMember("adult"));
+  on("#party-add-child", "click", () => addMember("child"));
+  on("#party-list", "input", e => { const row = e.target.closest(".party-row"); if (!row) return; const m = party[Number(row.dataset.i)]; if (!m) return; if (e.target.dataset.field === "name") m.name = e.target.value; if (e.target.dataset.field === "age") m.age = e.target.value; const c = partyCounts(); const names = party.map(x => x.name.trim()).filter(Boolean); $("#party-summary").textContent = `${c.adults} adult${c.adults === 1 ? "" : "s"}${c.kids ? ` and ${c.kids} ${c.kids === 1 ? "child" : "children"}` : ""} in your party${names.length ? `: you, ${names.join(", ")}` : ""}.`; });
+  on("#party-list", "change", e => { const row = e.target.closest(".party-row"); if (!row) return; const m = party[Number(row.dataset.i)]; if (m && e.target.dataset.field === "age") m.age = e.target.value; });
+  on("#party-list", "click", e => { const b = e.target.closest("[data-remove]"); if (!b) return; party.splice(Number(b.dataset.remove), 1); renderParty(); });
   function partyLabel(list) { return (list || []).map(m => m.type === "child" ? `${m.name || "child"}${m.age ? ` (${/^\d+$/.test(m.age) ? m.age : m.age.toLowerCase()})` : ""}` : (m.name || "guest")).join(", "); }
 
   function attendingValue() { const r = $("input[name=attending]:checked"); return r ? r.value : ""; }
@@ -312,6 +313,7 @@
     if (r.attending === "yes") bits.push(`<span>${r.adults} adult${r.adults == 1 ? "" : "s"}${Number(r.kids) ? `, ${r.kids} ${r.kids == 1 ? "child" : "children"}` : ""}${Array.isArray(r.party) && r.party.length ? ` · you, ${esc(partyLabel(r.party))}` : ""}</span>`);
     if (r.attending === "yes" && (diet.length || r.dietNote)) bits.push(`<span>Food: ${esc([...diet, r.dietNote].filter(Boolean).join(", "))}</span>`);
     if (r.email) bits.push(`<span>Confirmation sent to ${esc(r.email)}</span>`);
+    else if (r.phone && r.attending === "yes") bits.push(`<span>We'll text the details to ${esc(r.phone)} the day before</span>`);
     return bits.join("");
   }
   function showSuccess(r, returning) {
@@ -340,11 +342,11 @@
     const attending = attendingValue();
     const email = $("#f-email").value.trim();
     const phone = $("#f-phone").value.trim();
-    $("#f-name").removeAttribute("aria-invalid"); $("#f-email").removeAttribute("aria-invalid");
+    $("#f-name").removeAttribute("aria-invalid"); $("#f-email").removeAttribute("aria-invalid"); $("#f-phone").removeAttribute("aria-invalid");
     if (!name) { $("#f-name").setAttribute("aria-invalid", "true"); $("#f-name").focus(); status.className = "status err"; status.textContent = "Please add your name."; return; }
     if (!attending) { status.className = "status err"; status.textContent = "Let us know if you can make it."; $("input[name=attending]").focus(); return; }
+    if (phone.replace(/\D/g, "").length < 10) { $("#f-phone").setAttribute("aria-invalid", "true"); $("#f-phone").focus(); status.className = "status err"; status.textContent = phone ? "That mobile number doesn't look complete." : "Please add your mobile number so we can text you the details."; return; }
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { $("#f-email").setAttribute("aria-invalid", "true"); $("#f-email").focus(); status.className = "status err"; status.textContent = "That email doesn't look right."; return; }
-    if (!email && !phone) { status.className = "status err"; status.textContent = "Add an email or mobile number so we can send the details."; $("#f-email").focus(); return; }
     if (!token) setToken(randomToken("w-"));
     const payload = {
       action: "rsvp", token, name, attending,
