@@ -90,6 +90,15 @@
         </div>
       </div>
 
+      <div class="bulkbar msgbar">
+        <label class="small" for="msg-kind"><b>Message to send</b> with the Text / WhatsApp / Email / Msg buttons:</label>
+        <select class="select" id="msg-kind" style="width:auto;padding:8px 36px 8px 12px">
+          <option value="invite">Invitation</option>
+          <option value="reminder">Reminder (hasn't replied)</option>
+          <option value="dayBefore">Day-before details</option>
+        </select>
+      </div>
+
       <div class="bulkbar" id="bulkbar">
         <span class="small"><b id="sel-count">0</b> selected</span>
         <button class="btn btn-sm" type="button" data-bulk="invite">Email invites</button>

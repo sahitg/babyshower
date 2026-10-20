@@ -57,7 +57,9 @@
     const t = kind === "reminder" ? (s.reminderTemplate || cfg.reminderTemplate) : kind === "dayBefore" ? (s.dayBeforeTemplate || cfg.dayBeforeTemplate) : (s.smsTemplate || cfg.smsTemplate);
     return String(t || "").replace(/\{first\}/g, firstName(g.name)).replace(/\{name\}/g, g.name).replace(/\{link\}/g, linkFor(g));
   }
-  function messageKindFor(g) { const st = statusOf(g); return st === "yes" ? "dayBefore" : (g.invitedAt ? "reminder" : "invite"); }
+  // Which message the Text / WhatsApp / Email / Msg buttons use. Chosen by the host in the toolbar, never guessed.
+  function messageKind() { const el = $("#msg-kind"); return el && el.value ? el.value : "invite"; }
+  function messageKindFor() { return messageKind(); }
 
   /* ---------- rendering ---------- */
   function render() {
@@ -184,6 +186,7 @@
 
   $("#btn-refresh").addEventListener("click", () => refresh(false));
   $("#search").addEventListener("input", renderGuests);
+  $("#msg-kind").addEventListener("change", () => { renderGuests(); toast({ invite: "Buttons now send the invitation", reminder: "Buttons now send the reminder", dayBefore: "Buttons now send the day-before details" }[messageKind()]); });
   $("#filters").addEventListener("change", renderGuests);
   $("#sel-all").addEventListener("change", e => { const rows = guestRows(); rows.forEach(g => e.target.checked ? selected.add(g.token) : selected.delete(g.token)); renderGuests(); });
 
@@ -193,10 +196,15 @@
     if (link && link.getAttribute("aria-disabled") !== "true") {
       // the message app opens; assume it was sent and mark the guest as invited (Undo in the toast)
       const token = link.closest("tr").dataset.token; const g = data.guests.find(x => x.token === token);
-      if (g && !g.invitedAt && statusOf(g) !== "yes" && statusOf(g) !== "no") {
+      const kind = messageKind();
+      if (g && kind === "invite" && !g.invitedAt) {
         const prev = g.invitedAt; g.invitedAt = new Date().toISOString(); renderGuests();
         api.admin("markInvited", { tokens: [token] }).catch(() => { });
         toast(`${firstName(g.name)} marked as invited`, { label: "Undo", run: async () => { g.invitedAt = prev || ""; renderGuests(); try { await api.admin("clearInvited", { tokens: [token] }); } catch (err) { } } });
+      } else if (g && kind === "reminder") {
+        g.remindedAt = new Date().toISOString(); renderGuests();
+        api.admin("markReminded", { tokens: [token] }).catch(() => { });
+        toast(`Reminder noted for ${firstName(g.name)}`);
       }
       return;
     }
