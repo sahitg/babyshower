@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hosts · Rachana & Sahit's Baby Shower</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/host.css">
+<script src="config.js"></script>
+</head>
+<body class="host">
+
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="index.html">Rachana <span class="amp">&amp;</span> Sahit <span class="muted" style="font-style:normal;font-family:var(--font-body);font-size:.85rem;font-weight:600;margin-left:6px">HOSTS</span></a>
+    <nav class="nav" id="host-nav" hidden>
+      <a href="#guests" data-tab="guests" class="tab active">Guests</a>
+      <a href="#messages" data-tab="messages" class="tab">Messages</a>
+      <a href="#wishes" data-tab="wishes" class="tab">Wishes</a>
+      <a href="#guesses" data-tab="guesses" class="tab">Guesses</a>
+      <a href="#settings" data-tab="settings" class="tab">Settings</a>
+      <button class="btn btn-sm" id="btn-refresh" type="button">Refresh</button>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap host-main">
+
+  <!-- ---------- Login ---------- -->
+  <section id="login" class="card login-card">
+    <p class="eyebrow">Host dashboard</p>
+    <h2>Welcome back</h2>
+    <p class="muted">Enter the host key from the <b>Settings</b> tab of your Google Sheet. It's remembered on this device.</p>
+    <form id="login-form" class="form" novalidate>
+      <div class="fieldset">
+        <label class="label" for="host-key">Host key</label>
+        <input class="input" id="host-key" type="password" autocomplete="current-password" placeholder="shower-…">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit" id="login-btn">Open dashboard</button>
+        <span class="status" id="login-status"></span>
+      </div>
+    </form>
+    <div id="login-setup" class="setup-note" hidden>
+      <p class="small"><b>Backend not connected yet.</b> Add the Apps Script web-app URL to <code>config.js</code> (see DEPLOY.md) and reload.</p>
+    </div>
+  </section>
+
+  <!-- ---------- Dashboard ---------- -->
+  <div id="dash" hidden>
+
+    <!-- Overview -->
+    <section class="overview">
+      <div class="tiles" id="tiles"></div>
+      <div class="card diet-card" id="diet-card">
+        <div class="cluster" style="justify-content:space-between">
+          <p class="eyebrow">Food &amp; allergies</p>
+          <span class="small muted" id="diet-sub"></span>
+        </div>
+        <div class="chips" id="diet-chips-sum"></div>
+        <ul class="diet-notes" id="diet-notes"></ul>
+      </div>
+    </section>
+
+    <!-- Guests -->
+    <section class="panel" data-panel="guests">
+      <div class="panel-head">
+        <div>
+          <h2>Guests</h2>
+          <p class="muted small" id="guests-sub"></p>
+        </div>
+        <div class="cluster">
+          <button class="btn btn-primary" type="button" id="btn-add">Add guests</button>
+          <button class="btn" type="button" id="btn-export">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" id="search" type="search" placeholder="Search name, email, phone" aria-label="Search guests">
+        <div class="chips filters" id="filters">
+          <label class="chip"><input type="radio" name="filter" value="all" checked>All</label>
+          <label class="chip"><input type="radio" name="filter" value="awaiting">Awaiting</label>
+          <label class="chip"><input type="radio" name="filter" value="opened">Opened, no reply</label>
+          <label class="chip"><input type="radio" name="filter" value="yes">Attending</label>
+          <label class="chip"><input type="radio" name="filter" value="no">Declined</label>
+          <label class="chip"><input type="radio" name="filter" value="uninvited">Not yet invited</label>
+          <label class="chip"><input type="radio" name="filter" value="noemail">No email</label>
+        </div>
+      </div>
+
+      <div class="bulkbar" id="bulkbar">
+        <span class="small"><b id="sel-count">0</b> selected</span>
+        <button class="btn btn-sm" type="button" data-bulk="invite">Email invites</button>
+        <button class="btn btn-sm" type="button" data-bulk="reminder">Email reminders</button>
+        <button class="btn btn-sm" type="button" data-bulk="dayBefore">Email day-before details</button>
+        <button class="btn btn-sm" type="button" data-bulk="copylinks">Copy links</button>
+        <button class="btn btn-sm" type="button" data-bulk="markInvited">Mark as invited</button>
+        <span class="small muted" id="quota-note"></span>
+      </div>
+
+      <div class="table-wrap">
+        <table class="guests" id="guest-table">
+          <thead>
+            <tr>
+              <th class="chk"><input type="checkbox" id="sel-all" aria-label="Select all"></th>
+              <th>Guest</th>
+              <th>Status</th>
+              <th class="num">Party</th>
+              <th>Food</th>
+              <th>Contact</th>
+              <th>Sent</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="guest-rows"></tbody>
+        </table>
+        <p class="wall-empty" id="guests-empty" hidden>No guests match.</p>
+      </div>
+    </section>
+
+    <!-- Messages -->
+    <section class="panel" data-panel="messages" hidden>
+      <div class="panel-head">
+        <div>
+          <h2>Messages</h2>
+          <p class="muted small">Email goes out from your Gmail through the script. Texts and WhatsApp open on your phone with the message pre-filled; each guest's link is unique, so their RSVP is already filled in.</p>
+        </div>
+        <div class="cluster">
+          <button class="btn" type="button" id="btn-test-email">Send me a test invite</button>
+        </div>
+      </div>
+      <div class="grid-2" style="align-items:start">
+        <div class="stack">
+          <div class="card stack">
+            <p class="eyebrow">Text / WhatsApp templates</p>
+            <p class="hint">Use <code>{first}</code> for the guest's first name and <code>{link}</code> for their personal link.</p>
+            <div class="fieldset"><label class="label" for="t-sms">Invitation</label><textarea class="textarea" id="t-sms" data-setting="smsTemplate"></textarea></div>
+            <div class="fieldset"><label class="label" for="t-rem">Reminder</label><textarea class="textarea" id="t-rem" data-setting="reminderTemplate"></textarea></div>
+            <div class="fieldset"><label class="label" for="t-day">Day before</label><textarea class="textarea" id="t-day" data-setting="dayBeforeTemplate"></textarea></div>
+          </div>
+          <div class="card stack">
+            <p class="eyebrow">Email invitation</p>
+            <div class="fieldset"><label class="label" for="t-subj">Subject</label><input class="input" id="t-subj" data-setting="emailSubject"></div>
+            <div class="fieldset"><label class="label" for="t-intro">Opening line</label><textarea class="textarea" id="t-intro" data-setting="emailIntro"></textarea></div>
+            <div class="form-actions"><button class="btn btn-primary" type="button" id="btn-save-templates">Save templates</button><span class="status" id="templates-status"></span></div>
+          </div>
+        </div>
+        <div class="card stack">
+          <div class="cluster" style="justify-content:space-between">
+            <p class="eyebrow">Email preview</p>
+            <div class="seg small">
+              <label><input type="radio" name="pv" value="invite" checked>Invite</label>
+              <label><input type="radio" name="pv" value="reminder">Reminder</label>
+              <label><input type="radio" name="pv" value="dayBefore">Day before</label>
+              <label><input type="radio" name="pv" value="confirmYes">Confirmation</label>
+            </div>
+          </div>
+          <iframe id="email-preview" title="Email preview" class="email-frame"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <!-- Wishes -->
+    <section class="panel" data-panel="wishes" hidden>
+      <div class="panel-head">
+        <div><h2>Wishes &amp; advice</h2><p class="muted small" id="wishes-sub"></p></div>
+        <div class="cluster"><button class="btn" type="button" id="btn-export-wishes">Export for printing</button></div>
+      </div>
+      <div class="wall" id="host-wall"></div>
+      <p class="wall-empty" id="host-wall-empty" hidden>No wishes yet.</p>
+    </section>
+
+    <!-- Guesses -->
+    <section class="panel" data-panel="guesses" hidden>
+      <div class="panel-head">
+        <div><h2>The guessing board</h2><p class="muted small" id="guesses-sub"></p></div>
+      </div>
+      <div class="table-wrap">
+        <table class="guests" id="guess-table">
+          <thead><tr><th>Guest</th><th>Date</th><th>Time of day</th><th class="num">Weight</th><th class="num">Length</th><th>Boy / girl</th></tr></thead>
+          <tbody id="guess-rows"></tbody>
+        </table>
+        <p class="wall-empty" id="guesses-empty" hidden>No guesses yet.</p>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section class="panel" data-panel="settings" hidden>
+      <div class="panel-head">
+        <div><h2>Event settings</h2><p class="muted small">Changes show on the site within a minute. Guests who already RSVP'd get the final address in the day-before email.</p></div>
+        <div class="cluster"><a class="btn" id="link-sheet" href="#" target="_blank" rel="noopener">Open the Google Sheet</a></div>
+      </div>
+      <form id="settings-form" class="stack" novalidate>
+        <div class="grid-2" style="align-items:start">
+          <div class="card stack">
+            <p class="eyebrow">Where &amp; when</p>
+            <div class="fieldset"><label class="label" for="s-venueName">Venue name</label><input class="input" id="s-venueName" data-setting="venueName"></div>
+            <div class="fieldset"><label class="label" for="s-venueAddress">Address</label><input class="input" id="s-venueAddress" data-setting="venueAddress"></div>
+            <div class="fieldset"><label class="label" for="s-mapsUrl">Google Maps link <span class="muted">(optional)</span></label><input class="input" id="s-mapsUrl" data-setting="mapsUrl" placeholder="https://maps.app.goo.gl/…"></div>
+            <div class="row">
+              <div class="fieldset"><label class="label" for="s-date">Date</label><input class="input" id="s-date" data-setting="date" type="date"></div>
+              <div class="fieldset"><label class="label" for="s-rsvpBy">RSVP by</label><input class="input" id="s-rsvpBy" data-setting="rsvpBy" type="date"></div>
+            </div>
+            <div class="row">
+              <div class="fieldset"><label class="label" for="s-startTime">Starts</label><input class="input" id="s-startTime" data-setting="startTime" type="time"></div>
+              <div class="fieldset"><label class="label" for="s-endTime">Ends</label><input class="input" id="s-endTime" data-setting="endTime" type="time"></div>
+            </div>
+            <div class="fieldset"><label class="label" for="s-parking">Parking</label><textarea class="textarea short" id="s-parking" data-setting="parking"></textarea></div>
+            <div class="fieldset"><label class="label" for="s-schedule">Run of show <span class="muted">(one per line: time | what)</span></label><textarea class="textarea" id="s-schedule" data-setting="schedule"></textarea></div>
+          </div>
+          <div class="card stack">
+            <p class="eyebrow">Registry, gifts &amp; notes</p>
+            <div class="row">
+              <div class="fieldset"><label class="label" for="s-registryLabel1">Registry 1 label</label><input class="input" id="s-registryLabel1" data-setting="registryLabel1"></div>
+              <div class="fieldset"><label class="label" for="s-registryUrl1">Registry 1 link</label><input class="input" id="s-registryUrl1" data-setting="registryUrl1" placeholder="https://"></div>
+            </div>
+            <div class="row">
+              <div class="fieldset"><label class="label" for="s-registryLabel2">Registry 2 label</label><input class="input" id="s-registryLabel2" data-setting="registryLabel2"></div>
+              <div class="fieldset"><label class="label" for="s-registryUrl2">Registry 2 link</label><input class="input" id="s-registryUrl2" data-setting="registryUrl2" placeholder="https://"></div>
+            </div>
+            <div class="fieldset"><label class="label" for="s-giftNote">Gift note</label><textarea class="textarea short" id="s-giftNote" data-setting="giftNote"></textarea></div>
+            <div class="fieldset"><label class="label" for="s-dressCode">What to wear</label><input class="input" id="s-dressCode" data-setting="dressCode"></div>
+            <div class="fieldset"><label class="label" for="s-kidsNote">Kids</label><input class="input" id="s-kidsNote" data-setting="kidsNote"></div>
+            <div class="fieldset"><label class="label" for="s-heroCaption">Caption under the photo</label><input class="input" id="s-heroCaption" data-setting="heroCaption"></div>
+            <div class="fieldset"><label class="label" for="s-photoUrl">Photo URL <span class="muted">(optional; e.g. assets/photo.jpg)</span></label><input class="input" id="s-photoUrl" data-setting="photoUrl"></div>
+            <div class="row">
+              <div class="fieldset"><label class="label" for="s-showSex">Baby's sex shared?</label><select class="select" id="s-showSex" data-setting="showSex"><option value="false">Keep it a surprise</option><option value="true">Yes, it's known</option></select></div>
+              <div class="fieldset"><label class="label" for="s-babySex">If known</label><select class="select" id="s-babySex" data-setting="babySex"><option value="">—</option><option value="girl">Girl</option><option value="boy">Boy</option></select></div>
+            </div>
+          </div>
+          <div class="card stack">
+            <p class="eyebrow">Contact &amp; notifications</p>
+            <div class="fieldset"><label class="label" for="s-contactName">Contact name</label><input class="input" id="s-contactName" data-setting="contactName"></div>
+            <div class="row">
+              <div class="fieldset"><label class="label" for="s-contactPhone">Contact phone</label><input class="input" id="s-contactPhone" data-setting="contactPhone"></div>
+              <div class="fieldset"><label class="label" for="s-contactEmail">Contact email</label><input class="input" id="s-contactEmail" data-setting="contactEmail"></div>
+            </div>
+            <div class="fieldset"><label class="label" for="s-notifyEmail">Send RSVP notifications to</label><input class="input" id="s-notifyEmail" data-setting="notifyEmail"></div>
+            <div class="fieldset"><label class="label" for="s-siteUrl">Site address <span class="muted">(used in emails and links)</span></label><input class="input" id="s-siteUrl" data-setting="siteUrl" placeholder="https://…/baby-shower/"></div>
+            <div class="fieldset"><label class="label" for="s-signature">Sign emails as</label><input class="input" id="s-signature" data-setting="signature"></div>
+            <div class="fieldset"><label class="label" for="s-hostKey">Host key</label><input class="input" id="s-hostKey" data-setting="hostKey"><p class="hint">Change it and you'll need to sign in again.</p></div>
+          </div>
+        </div>
+        <div class="form-actions"><button class="btn btn-primary btn-lg" type="submit" id="btn-save-settings">Save settings</button><span class="status" id="settings-status"></span></div>
+      </form>
+    </section>
+
+  </div>
+</main>
+
+<!-- Add guests modal -->
+<div class="modal" id="modal-add" hidden>
+  <div class="modal-card">
+    <div class="cluster" style="justify-content:space-between"><h3>Add guests</h3><button class="btn btn-sm" type="button" data-close>Close</button></div>
+    <p class="hint">One guest per line. Separate name, email, phone and group with commas or tabs (paste straight from a spreadsheet). A couple or family can be one line, e.g. <i>The Raos</i>.</p>
+    <textarea class="textarea" id="add-text" placeholder="Priya Natarajan, priya@example.com, 425-555-0123, Friends&#10;Dev &amp; Meera Sharma, dev@example.com&#10;The Raos, , 425-555-0199, Family"></textarea>
+    <div class="table-wrap"><table class="guests small-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Group</th></tr></thead><tbody id="add-preview"></tbody></table></div>
+    <div class="form-actions"><button class="btn btn-primary" type="button" id="add-confirm">Add <span id="add-count">0</span> guests</button><span class="status" id="add-status"></span></div>
+  </div>
+</div>
+
+<!-- Edit guest modal -->
+<div class="modal" id="modal-edit" hidden>
+  <div class="modal-card">
+    <div class="cluster" style="justify-content:space-between"><h3>Edit guest</h3><button class="btn btn-sm" type="button" data-close>Close</button></div>
+    <form id="edit-form" class="form" novalidate>
+      <input type="hidden" id="e-token">
+      <div class="fieldset"><label class="label" for="e-name">Name</label><input class="input" id="e-name"></div>
+      <div class="row">
+        <div class="fieldset"><label class="label" for="e-email">Email</label><input class="input" id="e-email" type="email"></div>
+        <div class="fieldset"><label class="label" for="e-phone">Phone</label><input class="input" id="e-phone"></div>
+      </div>
+      <div class="row">
+        <div class="fieldset"><label class="label" for="e-group">Group</label><input class="input" id="e-group" placeholder="Family, Friends, Work…"></div>
+        <div class="fieldset"><label class="label" for="e-notes">Private note</label><input class="input" id="e-notes"></div>
+      </div>
+      <div class="form-actions"><button class="btn btn-primary" type="submit">Save</button><button class="btn" type="button" id="e-delete">Remove guest</button><span class="status" id="edit-status"></span></div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="assets/host.js"></script>
+</body>
+</html>

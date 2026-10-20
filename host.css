@@ -1,0 +1,70 @@
+/* Host dashboard — builds on site.css tokens. A UI to scan and operate, not read. */
+body.host { font-size: 15px; }
+.host-main { padding-block: 28px 80px; display: grid; gap: 28px; }
+.login-card { max-width: 520px; margin: 48px auto; display: grid; gap: 14px; }
+.setup-note { padding: 12px 14px; border-radius: var(--radius-sm); background: var(--blush-tint); color: var(--blush-deep); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .9em; background: var(--sand); padding: 1px 6px; border-radius: 6px; }
+
+.nav .tab { font-weight: 500; }
+.nav .tab.active { background: var(--ink); color: var(--cream); }
+@media (max-width: 720px) { .nav { flex-wrap: wrap; justify-content: flex-end; } .nav a:not(.btn) { display: inline-flex; font-size: .8rem; padding: 6px 8px; } .topbar .wrap { flex-wrap: wrap; padding-block: 8px; } }
+
+/* overview */
+.overview { display: grid; gap: 18px; grid-template-columns: minmax(0, 1.3fr) minmax(0, .9fr); align-items: start; }
+@media (max-width: 900px) { .overview { grid-template-columns: 1fr; } }
+.tiles { display: grid; gap: 12px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 901px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } .overview { grid-template-columns: minmax(0, 1.6fr) minmax(0, .9fr); } }
+.tile { padding: 16px 18px; border-radius: 16px; background: var(--paper); border: 1px solid var(--sand-2); display: grid; gap: 2px; min-width: 0; }
+.tile .n { font-family: var(--font-display); font-size: 2rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.tile .l { font-size: .8rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+.tile .s { font-size: .85rem; color: var(--ink-2); }
+.tile.yes { border-color: var(--sage-tint-2); background: var(--sage-tint); }
+.tile.yes .n { color: var(--sage-deep); }
+.tile.no .n { color: var(--blush-deep); }
+.tile.open .n { color: var(--warn); }
+.diet-card { display: grid; gap: 10px; padding: 18px 20px; }
+.diet-card .chip { cursor: default; }
+.diet-card .chip b { font-variant-numeric: tabular-nums; }
+.diet-notes { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: .9rem; display: grid; gap: 4px; }
+
+/* panels */
+.panel { display: grid; gap: 16px; }
+.panel-head { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; align-items: flex-end; }
+.panel-head h2 { font-size: 1.7rem; }
+.toolbar { display: grid; gap: 12px; grid-template-columns: minmax(0, 320px) 1fr; align-items: center; }
+@media (max-width: 760px) { .toolbar { grid-template-columns: 1fr; } }
+.filters .chip { padding: 6px 12px; font-size: .85rem; }
+.bulkbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 10px 14px; border-radius: 14px; background: var(--sand); }
+.bulkbar[data-empty="true"] { opacity: .6; }
+.bulkbar[data-empty="true"] .btn { pointer-events: none; opacity: .6; }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--sand-2); border-radius: 16px; background: var(--paper); }
+table.guests { width: 100%; border-collapse: collapse; font-size: .9rem; min-width: 820px; }
+table.guests th, table.guests td { text-align: left; padding: 10px 12px; border-top: 1px solid var(--sand-2); vertical-align: top; }
+table.guests th { border-top: 0; background: var(--sand); font-size: .74rem; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+table.guests th.chk, table.guests td.chk { width: 36px; padding-right: 0; }
+table.guests .num, table.guests td.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.guests tr.sel td { background: var(--sage-tint); }
+table.guests .name { font-weight: 600; }
+table.guests .sub { color: var(--ink-3); font-size: .8rem; display: block; }
+table.guests .contact { font-size: .85rem; color: var(--ink-2); max-width: 220px; overflow-wrap: anywhere; }
+table.guests .food { max-width: 200px; font-size: .85rem; color: var(--ink-2); }
+table.guests .note { font-style: italic; color: var(--ink-2); font-size: .85rem; max-width: 220px; }
+table.guests .sent { font-size: .8rem; color: var(--ink-3); white-space: nowrap; }
+.actions { display: flex; flex-wrap: wrap; gap: 4px; }
+.actions .btn { padding: 5px 10px; font-size: .78rem; }
+.actions .btn[aria-disabled="true"] { opacity: .4; pointer-events: none; }
+.small-table { min-width: 0 !important; }
+.small-table td { font-size: .85rem; }
+
+.email-frame { width: 100%; height: 760px; border: 1px solid var(--sand-2); border-radius: 14px; background: #FAF6EF; }
+.textarea.short { min-height: 70px; }
+
+/* modal */
+.modal { position: fixed; inset: 0; z-index: 40; background: rgba(43, 37, 34, .35); display: grid; place-items: center; padding: 16px; }
+.modal-card { width: min(720px, 100%); max-height: calc(100vh - 32px); overflow: auto; background: var(--paper); border-radius: var(--radius); padding: 24px; display: grid; gap: 14px; }
+
+/* wishes on host */
+.host .note-card { transform: none; }
+.note-card.hidden-wish { opacity: .55; }
+.note-card .tools { display: flex; gap: 6px; justify-content: space-between; align-items: center; }
