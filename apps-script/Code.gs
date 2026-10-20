@@ -17,7 +17,7 @@
  *  After changing this code later: Deploy → Manage deployments → ✎ → Version: New version → Deploy.
  */
 
-var VERSION = "1.1.0";
+var VERSION = "1.1.1";
 
 var SHEETS = {
   Settings: ["Key", "Value"],
@@ -207,7 +207,7 @@ function saveRsvp_(b, s) {
     Diet: attending === "yes" ? (Array.isArray(b.diet) ? b.diet.map(function (d) { return clean_(d, 40); }).filter(Boolean).join(", ") : clean_(b.diet, 200)) : "",
     DietNote: attending === "yes" ? clean_(b.dietNote, 300) : "",
     Email: clean_(b.email, 120).toLowerCase(),
-    Phone: clean_(b.phone, 40),
+    Phone: phone_(b.phone),
     Note: clean_(b.note, 600),
     UpdatedAt: now_()
   };
@@ -353,6 +353,7 @@ function adminOp_(b, s) {
     case "sendDayBefore": return sendBatch_("dayBefore", b.tokens || [], s);
     case "markInvited": return markGuests_(b.tokens || [], "InvitedAt", now_());
     case "clearInvited": return markGuests_(b.tokens || [], "InvitedAt", "");
+    case "markReminded": return markGuests_(b.tokens || [], "RemindedAt", now_());
     case "sendTest": return sendTest_(String(b.kind || "invite"), s);
     default: throw new Error("Unknown op: " + op);
   }
@@ -368,7 +369,7 @@ function addGuests_(list) {
     var email = clean_(g.email, 120).toLowerCase();
     if (email && byEmail[email]) { skipped.push(name); return; }
     var token = token_(8);
-    appendRow_(sh, SHEETS.Guests, { Token: token, Name: name, Email: email, Phone: clean_(g.phone, 40), Group: clean_(g.group, 40), Added: now_(), Notes: clean_(g.notes, 200) });
+    appendRow_(sh, SHEETS.Guests, { Token: token, Name: name, Email: email, Phone: phone_(g.phone), Group: clean_(g.group, 40), Added: now_(), Notes: clean_(g.notes, 200) });
     if (email) byEmail[email] = true;
     added.push({ token: token, name: name });
   });
@@ -383,7 +384,7 @@ function updateGuest_(token, fields) {
   var upd = {};
   ["Name", "Email", "Phone", "Group", "Notes"].forEach(function (k) {
     var lk = k.charAt(0).toLowerCase() + k.slice(1);
-    if (fields[lk] != null) upd[k] = clean_(fields[lk], 200);
+    if (fields[lk] != null) upd[k] = k === "Phone" ? phone_(fields[lk]) : clean_(fields[lk], 200);
   });
   writeRow_(sh, row, SHEETS.Guests, upd);
   return { ok: true };
@@ -669,7 +670,8 @@ function isDate_(v) { return Object.prototype.toString.call(v) === "[object Date
 function cell_(v) {
   if (isDate_(v)) return v.toISOString();
   if (v == null) return "";
-  return typeof v === "string" ? v : String(v);
+  var s = typeof v === "string" ? v : String(v);
+  return s.charAt(0) === "'" ? s.slice(1) : s; // undo the literal-text apostrophe from safeCell_
 }
 
 function findRowIndex_(sh, col, value) {
@@ -689,16 +691,26 @@ function findByToken_(name, token) {
 }
 
 function appendRow_(sh, cols, obj) {
-  var row = cols.map(function (c) { return obj[c] == null ? "" : obj[c]; });
-  sh.appendRow(row);
-  var r = sh.getLastRow();
-  sh.getRange(r, 1, 1, cols.length).setNumberFormat("@");
+  // Write as plain text (format first, then values) so phone numbers like "+1 (314) 555-0100"
+  // are never parsed as formulas, which is what sheet.appendRow() would do.
+  var row = cols.map(function (c) { return safeCell_(obj[c]); });
+  var r = sh.getLastRow() + 1;
+  var rng = sh.getRange(r, 1, 1, cols.length);
+  rng.setNumberFormat("@");
+  rng.setValues([row]);
+}
+function safeCell_(v) {
+  if (v == null) return "";
+  if (typeof v !== "string") return v;
+  return /^[=+\-@]/.test(v) ? "'" + v : v; // leading apostrophe: Sheets stores the rest as literal text
 }
 
 function writeRow_(sh, row, cols, obj) {
-  var cur = sh.getRange(row, 1, 1, cols.length).getValues()[0];
-  for (var c = 0; c < cols.length; c++) if (obj[cols[c]] != null) cur[c] = obj[cols[c]];
-  sh.getRange(row, 1, 1, cols.length).setValues([cur]);
+  var rng = sh.getRange(row, 1, 1, cols.length);
+  var cur = rng.getValues()[0];
+  for (var c = 0; c < cols.length; c++) if (obj[cols[c]] != null) cur[c] = safeCell_(obj[cols[c]]);
+  rng.setNumberFormat("@");
+  rng.setValues([cur]);
 }
 
 function getSettings_() {
@@ -735,7 +747,7 @@ function normalizeSettingsSheet_() {
 function setSetting_(key, value) {
   var sh = sheet_("Settings");
   var row = findRowIndex_(sh, 1, key);
-  if (row) sh.getRange(row, 2).setValue(value); else sh.appendRow([key, value]);
+  if (row) sh.getRange(row, 2).setNumberFormat("@").setValue(safeCell_(value)); else { var r = sh.getLastRow() + 1; sh.getRange(r, 1, 1, 2).setNumberFormat("@").setValues([[key, safeCell_(value)]]); }
 }
 
 function publicSettings_(s) {
@@ -761,6 +773,13 @@ function withLock_(fn) {
 function json_(obj) { return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON); }
 function now_() { return new Date().toISOString(); }
 function clean_(v, max) { return String(v == null ? "" : v).replace(/[\u0000-\u001F\u007F]/g, " ").trim().slice(0, max || 200); }
+function phone_(v) {
+  var raw = clean_(v, 40);
+  var d = raw.replace(/\D/g, "");
+  if (d.length === 11 && d.charAt(0) === "1") d = d.slice(1);
+  if (d.length === 10) return "(" + d.slice(0, 3) + ") " + d.slice(3, 6) + "-" + d.slice(6);
+  return raw;
+}
 function clampInt_(v, min, max, dflt) { var n = parseInt(v, 10); if (isNaN(n)) return dflt; return Math.max(min, Math.min(max, n)); }
 function firstName_(n) {
   var name = String(n || "").trim(), parts = name.split(/\s+/);
