@@ -19,8 +19,8 @@ Everything lives in two places you already own: a **Google Sheet** (guests, RSVP
 1. Go to **github.com/new**. Repository name: `baby-shower`. Visibility: **Public** (required for free Pages). Click **Create repository**.
 2. On the empty-repo page click **"uploading an existing file"**. Drag in everything from this folder (`index.html`, `host.html`, `config.js`, the `assets` folder, `apps-script`, these docs). Click **Commit changes**.
 3. Open **Settings → Pages**. Under *Build and deployment* choose **Source: Deploy from a branch**, Branch **main**, folder **/ (root)**. Save.
-4. After a minute or two the page shows your address: `https://sahitg.github.io/baby-shower/`.
-5. Open `https://sahitg.github.io/baby-shower/host.html`, sign in with the host key, and check **Settings**: venue, registry, phone and **Site address** (`https://sahitg.github.io/baby-shower/`) should already be filled in; adjust anything and save.
+4. After a minute or two the page shows your address: `https://sahitg.github.io/babyshower/`.
+5. Open `https://sahitg.github.io/babyshower/host.html`, sign in with the host key, and check **Settings**: venue, registry, phone and **Site address** (`https://sahitg.github.io/babyshower/`) should already be filled in; adjust anything and save.
 
 Updating the site later: upload the changed file again on GitHub (it replaces the old one), or start a Claude session connected to the repo and ask for the change. Most things never need that: venue, registry links, contact details, schedule, templates and the photo are all edited from the host dashboard.
 

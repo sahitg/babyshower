@@ -68,3 +68,8 @@ table.guests .sent { font-size: .8rem; color: var(--ink-3); white-space: nowrap;
 .host .note-card { transform: none; }
 .note-card.hidden-wish { opacity: .55; }
 .note-card .tools { display: flex; gap: 6px; justify-content: space-between; align-items: center; }
+
+/* message test + toast action */
+.msg-preview { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--sand); font: inherit; font-size: .9rem; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink-2); }
+.toast .toast-action { margin-left: 12px; background: transparent; border: 1px solid rgba(250, 246, 239, .5); color: var(--cream); border-radius: 999px; padding: 4px 12px; font-size: .85rem; cursor: pointer; }
+.toast { pointer-events: auto; }

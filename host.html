@@ -128,11 +128,22 @@
           <p class="muted small">Email goes out from your Gmail through the script. Texts and WhatsApp open on your phone with the message pre-filled; each guest's link is unique, so their RSVP is already filled in.</p>
         </div>
         <div class="cluster">
-          <button class="btn" type="button" id="btn-test-email">Send me a test invite</button>
+          <button class="btn" type="button" id="btn-test-email">Email me a test invite</button>
         </div>
       </div>
       <div class="grid-2" style="align-items:start">
         <div class="stack">
+          <div class="card stack" id="phone-test">
+            <p class="eyebrow">Try it on your phone</p>
+            <p class="hint">Open this dashboard on your phone, enter your own number, and tap a button: Messages or WhatsApp opens with the invitation ready to send to yourself. The same buttons next to each guest work the same way.</p>
+            <div class="fieldset"><label class="label" for="test-phone">Your mobile number</label><input class="input" id="test-phone" type="tel" inputmode="tel" placeholder="(314) 814-3486"></div>
+            <div class="cluster">
+              <a class="btn btn-primary" id="test-sms" href="#">Text me (iMessage / SMS)</a>
+              <a class="btn" id="test-wa" href="#" target="_blank" rel="noopener">WhatsApp me</a>
+              <button class="btn" type="button" id="test-copy">Copy the message</button>
+            </div>
+            <pre class="msg-preview" id="test-preview"></pre>
+          </div>
           <div class="card stack">
             <p class="eyebrow">Text / WhatsApp templates</p>
             <p class="hint">Use <code>{first}</code> for the guest's first name and <code>{link}</code> for their personal link.</p>

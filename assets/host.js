@@ -20,7 +20,12 @@
     return parts[0];
   }
   let toastTimer;
-  function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 3200); }
+  function toast(msg, action) {
+    const t = $("#toast"); t.textContent = msg;
+    if (action) { const b = document.createElement("button"); b.type = "button"; b.className = "toast-action"; b.textContent = action.label; b.addEventListener("click", () => { t.classList.remove("show"); action.run(); }); t.appendChild(b); }
+    t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), action ? 6000 : 3200);
+  }
+  function partyLabel(list) { return (list || []).map(m => (m.name || (m.type === "child" ? "child" : "guest")) + (m.age ? ` (${String(m.age).toLowerCase()})` : "")).join(", "); }
   function fmtWhen(iso) { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? String(iso) : d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
   function digits(p) { return String(p || "").replace(/[^\d+]/g, ""); }
   function waNumber(p) { let d = String(p || "").replace(/\D/g, ""); if (d.length === 10) d = "1" + d; return d; }
@@ -122,7 +127,7 @@
       const mailHref = g.email ? `mailto:${encodeURIComponent(g.email)}?subject=${subject}&body=${msg}` : "";
       return `<tr data-token="${esc(g.token)}" class="${selected.has(g.token) ? "sel" : ""}">
         <td class="chk"><input type="checkbox" class="sel-row" ${selected.has(g.token) ? "checked" : ""} aria-label="Select ${esc(g.name)}"></td>
-        <td><span class="name">${esc(g.name)}</span><span class="sub">${esc(g.group || "")}${g.group === "Walk-in" ? " · not on your list" : ""}</span>${r && r.note ? `<span class="note">“${esc(r.note)}”</span>` : ""}</td>
+        <td><span class="name">${esc(g.name)}</span><span class="sub">${esc(g.group || "")}${g.group === "Walk-in" ? " · not on your list" : ""}</span>${r && r.attending === "yes" && Array.isArray(r.party) && r.party.length ? `<span class="sub">with ${esc(partyLabel(r.party))}</span>` : ""}${r && r.note ? `<span class="note">“${esc(r.note)}”</span>` : ""}</td>
         <td>${pill[st]}</td>
         <td class="num">${party}</td>
         <td class="food">${esc(food)}</td>
@@ -131,9 +136,9 @@
         <td><div class="actions">
           <button class="btn" type="button" data-act="copy" title="Copy personal link">Link</button>
           <button class="btn" type="button" data-act="copymsg" title="Copy ${kind} message">Msg</button>
-          <a class="btn" href="${esc(smsHref)}" ${smsHref ? "" : 'aria-disabled="true"'}>Text</a>
-          <a class="btn" href="${esc(waHref)}" ${waHref ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'}>WhatsApp</a>
-          <a class="btn" href="${esc(mailHref)}" ${mailHref ? "" : 'aria-disabled="true"'}>Email</a>
+          <a class="btn" data-send="sms" href="${esc(smsHref)}" ${smsHref ? "" : 'aria-disabled="true"'}>Text</a>
+          <a class="btn" data-send="wa" href="${esc(waHref)}" ${waHref ? 'target="_blank" rel="noopener"' : 'aria-disabled="true"'}>WhatsApp</a>
+          <a class="btn" data-send="mail" href="${esc(mailHref)}" ${mailHref ? "" : 'aria-disabled="true"'}>Email</a>
           <button class="btn" type="button" data-act="edit">Edit</button>
         </div></td></tr>`;
     }).join("");
@@ -184,6 +189,17 @@
 
   $("#guest-rows").addEventListener("change", e => { if (!e.target.classList.contains("sel-row")) return; const t = e.target.closest("tr").dataset.token; e.target.checked ? selected.add(t) : selected.delete(t); renderGuests(); });
   $("#guest-rows").addEventListener("click", async e => {
+    const link = e.target.closest("a.btn[data-send]");
+    if (link && link.getAttribute("aria-disabled") !== "true") {
+      // the message app opens; assume it was sent and mark the guest as invited (Undo in the toast)
+      const token = link.closest("tr").dataset.token; const g = data.guests.find(x => x.token === token);
+      if (g && !g.invitedAt && statusOf(g) !== "yes" && statusOf(g) !== "no") {
+        const prev = g.invitedAt; g.invitedAt = new Date().toISOString(); renderGuests();
+        api.admin("markInvited", { tokens: [token] }).catch(() => { });
+        toast(`${firstName(g.name)} marked as invited`, { label: "Undo", run: async () => { g.invitedAt = prev || ""; renderGuests(); try { await api.admin("clearInvited", { tokens: [token] }); } catch (err) { } } });
+      }
+      return;
+    }
     const b = e.target.closest("[data-act]"); if (!b) return;
     const token = b.closest("tr").dataset.token; const g = data.guests.find(x => x.token === token); if (!g) return;
     if (b.dataset.act === "copy") { await copy(linkFor(g)); toast(`Link for ${firstName(g.name)} copied`); }
@@ -219,10 +235,10 @@
 
   // export CSV
   $("#btn-export").addEventListener("click", () => {
-    const head = ["Name", "Group", "Status", "Adults", "Kids", "Food", "Email", "Phone", "Note", "Invited", "Reminded", "Opened", "Link"];
+    const head = ["Name", "Group", "Status", "Adults", "Kids", "Party", "Food", "Email", "Phone", "Note", "Invited", "Reminded", "Opened", "Link"];
     const lines = [head.join(",")].concat((data.guests || []).map(g => {
       const r = rsvpOf(g); const st = statusOf(g);
-      return [g.name, g.group, st, r && r.attending === "yes" ? r.adults : "", r && r.attending === "yes" ? r.kids : "", r ? [...(r.diet || []), r.dietNote].filter(Boolean).join("; ") : "", g.email, g.phone, r ? r.note : "", g.invitedAt, g.remindedAt, g.viewedAt, linkFor(g)]
+      return [g.name, g.group, st, r && r.attending === "yes" ? r.adults : "", r && r.attending === "yes" ? r.kids : "", r && r.attending === "yes" ? partyLabel(r.party) : "", r ? [...(r.diet || []), r.dietNote].filter(Boolean).join("; ") : "", g.email, g.phone, r ? r.note : "", g.invitedAt, g.remindedAt, g.viewedAt, linkFor(g)]
         .map(v => `"${String(v == null ? "" : v).replace(/"/g, '""')}"`).join(",");
     }));
     download("baby-shower-guests.csv", lines.join("\n"), "text/csv");
@@ -251,7 +267,7 @@
   $("#btn-save-templates").addEventListener("click", async () => {
     const st = $("#templates-status"); st.textContent = "Saving…";
     const settings = {}; $$('[data-panel="messages"] [data-setting]').forEach(el => settings[el.dataset.setting] = el.value.trim());
-    try { const r = await api.admin("updateSettings", { settings }); data.settings = r.settings || Object.assign(data.settings, settings); st.textContent = "Saved."; renderGuests(); loadPreview(); }
+    try { const r = await api.admin("updateSettings", { settings }); data.settings = r.settings || Object.assign(data.settings, settings); st.textContent = "Saved."; renderGuests(); refreshPhoneTest(); loadPreview(); }
     catch (err) { st.textContent = "Couldn't save: " + err.message; }
   });
   async function loadPreview() {
@@ -259,6 +275,15 @@
     try { const r = await api.get("preview", { key, kind }); $("#email-preview").srcdoc = r.html; } catch (e) { $("#email-preview").srcdoc = `<p style="font-family:sans-serif;padding:20px">${esc(e.message)}</p>`; }
   }
   $$("input[name=pv]").forEach(i => i.addEventListener("change", loadPreview));
+  function testMessage() { const g = { name: (data.settings.contactName || cfg.contactName || "Sahit") + " Test", token: "" }; const s = data.settings || {}; const t = s.smsTemplate || cfg.smsTemplate; return String(t || "").replace(/\{first\}/g, firstName(g.name)).replace(/\{name\}/g, g.name).replace(/\{link\}/g, siteUrl()); }
+  function refreshPhoneTest() {
+    const num = $("#test-phone").value.trim(); const msg = encodeURIComponent(testMessage());
+    $("#test-sms").href = num ? `sms:${digits(num)}?&body=${msg}` : "#"; $("#test-sms").setAttribute("aria-disabled", num ? "false" : "true");
+    $("#test-wa").href = num ? `https://wa.me/${waNumber(num)}?text=${msg}` : "#"; $("#test-wa").setAttribute("aria-disabled", num ? "false" : "true");
+    $("#test-preview").textContent = testMessage();
+  }
+  $("#test-phone").addEventListener("input", refreshPhoneTest);
+  $("#test-copy").addEventListener("click", async () => { await copy(testMessage()); toast("Message copied"); });
   $("#btn-test-email").addEventListener("click", async () => {
     await run(async () => { const r = await api.admin("sendTest", { kind: ($("input[name=pv]:checked") || {}).value || "invite" }); toast(`Test sent to ${r.to}`); return r; }, null);
   });
@@ -304,7 +329,7 @@
   function showTab(name) {
     $$(".panel").forEach(p => p.hidden = p.dataset.panel !== name);
     $$("#host-nav .tab").forEach(t => t.classList.toggle("active", t.dataset.tab === name));
-    if (name === "messages") loadPreview();
+    if (name === "messages") { if (!$("#test-phone").value) $("#test-phone").value = data.settings.contactPhone || cfg.contactPhone || ""; refreshPhoneTest(); loadPreview(); }
   }
   $$("#host-nav .tab").forEach(t => t.addEventListener("click", e => { e.preventDefault(); history.replaceState(null, "", "#" + t.dataset.tab); showTab(t.dataset.tab); }));
 

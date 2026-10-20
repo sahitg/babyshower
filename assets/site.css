@@ -245,6 +245,12 @@ hr.rule { border: 0; border-top: 1px solid var(--sand-2); margin: 0; }
 .chip:has(input:checked) { background: var(--sage-deep); border-color: var(--sage-deep); color: #fff; }
 .chip:has(input:focus-visible) { outline: 3px solid var(--sage-tint-2); outline-offset: 2px; }
 
+.party { display: grid; gap: 10px; }
+.party-row { display: grid; grid-template-columns: minmax(0, 1fr) 112px 40px; gap: 8px; align-items: center; }
+.party-row .party-type { font-size: .9rem; color: var(--ink-3); text-align: center; }
+.party-remove { height: 40px; width: 40px; border-radius: 50%; border: 1px solid var(--sand-2); background: var(--paper); color: var(--ink-3); font-size: 1.2rem; line-height: 1; cursor: pointer; }
+.party-remove:hover { color: var(--bad); border-color: var(--bad); }
+@media (max-width: 420px) { .party-row { grid-template-columns: minmax(0, 1fr) 96px 36px; } }
 .stepper { display: inline-grid; grid-template-columns: 44px 56px 44px; align-items: center; border: 1px solid var(--sand-2); border-radius: 999px; background: var(--paper); overflow: hidden; }
 .stepper button { height: 44px; border: 0; background: transparent; cursor: pointer; font-size: 1.3rem; color: var(--sage-deep); }
 .stepper button:hover { background: var(--sage-tint); }

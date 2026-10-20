@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Rachana & Sahit's Baby Shower</title>
-<meta name="description" content="Join us Saturday, October 31, 2026 from 11 AM to 4 PM at The Club at Snoqualmie Ridge to celebrate Baby Garapati. RSVP, find the registry, and leave a wish.">
+<meta name="description" content="Join us Saturday, October 31, 2026 from 11 AM to 3 PM at The Club at Snoqualmie Ridge to celebrate Baby Garapati. RSVP, find the registry, and leave a wish.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Rachana & Sahit's Baby Shower">
-<meta property="og:description" content="Saturday, October 31, 2026 · 11 AM – 4 PM · The Club at Snoqualmie Ridge. RSVP, registry, and a wish for the baby.">
-<meta property="og:url" content="https://sahitg.github.io/baby-shower/">
-<meta property="og:image" content="https://sahitg.github.io/baby-shower/assets/og.png">
+<meta property="og:description" content="Saturday, October 31, 2026 · 11 AM – 3 PM · The Club at Snoqualmie Ridge. RSVP, registry, and a wish for the baby.">
+<meta property="og:url" content="https://sahitg.github.io/babyshower/">
+<meta property="og:image" content="https://sahitg.github.io/babyshower/assets/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -46,7 +46,7 @@
         <h1 class="rise d1" id="hero-title">A baby shower for <span class="names">Rachana <span class="amp">&amp;</span> Sahit</span></h1>
         <div class="hero-when rise d2">
           <div class="date" id="hero-date">Saturday, October 31, 2026</div>
-          <div class="time num" id="hero-time">11:00 AM – 4:00 PM</div>
+          <div class="time num" id="hero-time">11:00 AM – 3:00 PM</div>
           <div class="place" id="hero-place">The Club at Snoqualmie Ridge · Snoqualmie, WA</div>
         </div>
         <div class="hero-actions rise d3">
@@ -79,7 +79,7 @@
             <div class="detail">
               <p class="eyebrow">When</p>
               <h3 id="d-date">Saturday, October 31, 2026</h3>
-              <p class="num" id="d-time">11:00 AM – 4:00 PM (Pacific). Drop in any time; lunch is served around noon.</p>
+              <p class="num" id="d-time">11:00 AM – 3:00 PM (Pacific). Drop in any time; lunch is served at 1.</p>
               <div class="links">
                 <a href="#" id="cal-google" target="_blank" rel="noopener">Add to Google Calendar</a>
                 <a href="#" id="cal-ics">Apple / Outlook (.ics)</a>
@@ -128,10 +128,10 @@
             </div>
             <ol class="schedule" id="schedule">
               <li><time>11:00</time><span>Welcome drinks &amp; snacks</span></li>
-              <li><time>12:00</time><span>Lunch</span></li>
-              <li><time>1:00</time><span>Games &amp; the guessing board</span></li>
-              <li><time>2:30</time><span>Cake, wishes &amp; a few words</span></li>
-              <li><time>4:00</time><span>Farewell</span></li>
+              <li><time>12:00</time><span>Games &amp; the guessing board</span></li>
+              <li><time>1:00</time><span>Lunch</span></li>
+              <li><time>2:15</time><span>Cake, wishes &amp; a few words</span></li>
+              <li><time>3:00</time><span>Farewell</span></li>
             </ol>
           </div>
         </div>
@@ -169,26 +169,14 @@
 
             <div id="attending-fields" class="stack" hidden>
               <fieldset class="fieldset">
-                <legend>How many in your party?</legend>
-                <p class="hint">Including you. Kids count separately so we can plan activities and seating.</p>
-                <div class="stepper-row">
-                  <div class="fieldset">
-                    <span class="label">Adults</span>
-                    <div class="stepper" data-stepper="adults">
-                      <button type="button" aria-label="Fewer adults" data-step="-1">−</button>
-                      <output id="f-adults" for="f-adults">1</output>
-                      <button type="button" aria-label="More adults" data-step="1">+</button>
-                    </div>
-                  </div>
-                  <div class="fieldset">
-                    <span class="label">Kids</span>
-                    <div class="stepper" data-stepper="kids">
-                      <button type="button" aria-label="Fewer kids" data-step="-1">−</button>
-                      <output id="f-kids" for="f-kids">0</output>
-                      <button type="button" aria-label="More kids" data-step="1">+</button>
-                    </div>
-                  </div>
+                <legend>Who's coming with you?</legend>
+                <p class="hint">You're already counted. Add your partner, kids, or anyone else in your group so we can plan seating, food and activities.</p>
+                <div class="party" id="party-list"></div>
+                <div class="cluster">
+                  <button class="btn btn-sm" type="button" id="party-add-adult">+ Partner or guest</button>
+                  <button class="btn btn-sm" type="button" id="party-add-child">+ Child</button>
                 </div>
+                <p class="hint" id="party-summary">Just you so far.</p>
               </fieldset>
 
               <fieldset class="fieldset">
@@ -412,7 +400,7 @@
           </details>
           <details>
             <summary>What if I'm running late or my plans change?</summary>
-            <div class="a">Come whenever you can; it's an open afternoon from 11 to 4. If your plans change, update your RSVP from the same link, or text <span id="faq-contact">Sahit</span>.</div>
+            <div class="a">Come whenever you can; it's an open afternoon from 11 to 3. If your plans change, update your RSVP from the same link, or text <span id="faq-contact">Sahit</span>.</div>
           </details>
         </div>
       </div>

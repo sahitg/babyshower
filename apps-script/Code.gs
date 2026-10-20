@@ -17,12 +17,12 @@
  *  After changing this code later: Deploy → Manage deployments → ✎ → Version: New version → Deploy.
  */
 
-var VERSION = "1.0.0";
+var VERSION = "1.1.0";
 
 var SHEETS = {
   Settings: ["Key", "Value"],
   Guests:   ["Token", "Name", "Email", "Phone", "Group", "Added", "InvitedAt", "RemindedAt", "ViewedAt", "Notes"],
-  RSVPs:    ["Token", "Name", "Attending", "Adults", "Kids", "Diet", "DietNote", "Email", "Phone", "Note", "CreatedAt", "UpdatedAt"],
+  RSVPs:    ["Token", "Name", "Attending", "Adults", "Kids", "Diet", "DietNote", "Email", "Phone", "Note", "CreatedAt", "UpdatedAt", "Party"],
   Wishes:   ["Id", "Token", "Name", "Message", "CreatedAt", "Visible"],
   Guesses:  ["Token", "Name", "Date", "TimeOfDay", "WeightOz", "Length", "Sex", "CreatedAt"],
   Log:      ["Time", "Action", "Detail"]
@@ -32,18 +32,24 @@ var SHEETS = {
 var PRIVATE_KEYS = ["hostKey", "notifyEmail"];
 
 // Early placeholder values that setup() may overwrite with the real details below.
-var PLACEHOLDERS = ["Venue to be announced", "Near Snoqualmie, WA", "Our baby registry", "2026-10-24", "Free parking on site. Carpooling is welcome but not required.",
+var PLACEHOLDERS = ["https://sahitg.github.io/baby-shower/", "16:00",
+  "11:00 | Welcome drinks & snacks\n12:00 | Lunch\n1:00 | Games & the guessing board\n2:15 | Cake, wishes & a few words\n3:00 | Farewell",
+  "Hi {first}, just a nudge: we're still hoping you can join us for the baby shower on Sat, Oct 31. Could you RSVP by Oct 24? {link}",
+  "11:00 | Welcome drinks & snacks\n12:00 | Lunch\n1:00 | Games & the guessing board\n2:30 | Cake, wishes & a few words\n4:00 | Farewell",
+  "Hi {first}! Rachana and I are hosting a baby shower on Sat, Oct 31 (11am–4pm) near Snoqualmie and would love for you to come. All the details + RSVP are here: {link}",
+  "Hi {first}! See you tomorrow at the baby shower, 11am–4pm. Address and parking details are here: {link}",
+  "Venue to be announced", "Near Snoqualmie, WA", "Our baby registry", "2026-10-24", "Free parking on site. Carpooling is welcome but not required.",
   "11:00 | Welcome, mimosas & mocktails\n12:00 | Lunch\n1:00 | Games & the guessing board\n2:30 | Cake, wishes & a few words\n4:00 | Farewell"];
 
 // Mirrors config.js on the site. Edit values in the Settings tab (or from the host dashboard).
 var DEFAULT_SETTINGS = [
-  ["siteUrl", "https://sahitg.github.io/baby-shower/"],
+  ["siteUrl", "https://sahitg.github.io/babyshower/"],
   ["eventTitle", "A baby shower for Rachana & Sahit"],
   ["signature", "Rachana & Sahit"],
   ["hostedBy", "Hosted by Sahit"],
   ["date", "2026-10-31"],
   ["startTime", "11:00"],
-  ["endTime", "16:00"],
+  ["endTime", "15:00"],
   ["timeZone", "America/Los_Angeles"],
   ["rsvpBy", "2026-10-27"],
   ["dueMonth", "2027-01"],
@@ -63,14 +69,14 @@ var DEFAULT_SETTINGS = [
   ["dressCode", "Autumn casual. We'll be indoors, but bring a layer for photos outside."],
   ["kidsNote", "Kids are very welcome. Let us know how many are coming so we can plan activities and seating."],
   ["giftNote", "Your presence is the real gift. If you'd like to bring something, the registry has everything we've been dreaming about. Items can ship straight to our home or come along with you."],
-  ["schedule", "11:00 | Welcome drinks & snacks\n12:00 | Lunch\n1:00 | Games & the guessing board\n2:30 | Cake, wishes & a few words\n4:00 | Farewell"],
+  ["schedule", "11:00 | Welcome drinks & snacks\n12:00 | Games & the guessing board\n1:00 | Lunch\n2:15 | Cake, wishes & a few words\n3:00 | Farewell"],
   ["heroCaption", "Baby Garapati arrives January 2027"],
   ["photoUrl", ""],
   ["emailSubject", "You're invited: a baby shower for Rachana & Sahit, Oct 31"],
   ["emailIntro", "We're expecting a little one in January, and we'd love to celebrate with you before the baby arrives. Join us for a relaxed afternoon of lunch, games and good company."],
-  ["smsTemplate", "Hi {first}! Rachana and I are hosting a baby shower on Sat, Oct 31 (11am–4pm) near Snoqualmie and would love for you to come. All the details + RSVP are here: {link}"],
-  ["reminderTemplate", "Hi {first}, just a nudge: we're still hoping you can join us for the baby shower on Sat, Oct 31. Could you RSVP by Oct 24? {link}"],
-  ["dayBeforeTemplate", "Hi {first}! See you tomorrow at the baby shower, 11am–4pm. Address and parking details are here: {link}"],
+  ["smsTemplate", "Hi {first}! Rachana and I are hosting a baby shower on Sat, Oct 31 (11am–3pm) at The Club at Snoqualmie Ridge and would love for you to come. All the details + RSVP are here: {link}"],
+  ["reminderTemplate", "Hi {first}, just a nudge: we're still hoping you can join us for the baby shower on Sat, Oct 31. Could you RSVP by Oct 27? {link}"],
+  ["dayBeforeTemplate", "Hi {first}! See you tomorrow at the baby shower, 11am–3pm. Address and parking details are here: {link}"],
   ["notifyEmail", ""],   // where RSVP notifications go; blank = the account that deployed the script
   ["hostKey", ""]        // generated by setup(); needed to open the host dashboard
 ];
@@ -190,10 +196,14 @@ function saveRsvp_(b, s) {
   var name = clean_(b.name, 120);
   if (!name) throw new Error("Name is required");
   var attending = String(b.attending) === "yes" ? "yes" : "no";
+  var party = attending === "yes" ? cleanParty_(b.party) : [];
+  var adultsInParty = party.filter(function (m) { return m.type === "adult"; }).length;
+  var kidsInParty = party.filter(function (m) { return m.type === "child"; }).length;
   var rec = {
     Token: token, Name: name, Attending: attending,
-    Adults: attending === "yes" ? clampInt_(b.adults, 1, 20, 1) : 0,
-    Kids: attending === "yes" ? clampInt_(b.kids, 0, 20, 0) : 0,
+    Adults: attending === "yes" ? (party.length ? 1 + adultsInParty : clampInt_(b.adults, 1, 20, 1)) : 0,
+    Kids: attending === "yes" ? (party.length ? kidsInParty : clampInt_(b.kids, 0, 20, 0)) : 0,
+    Party: partyToString_(party),
     Diet: attending === "yes" ? (Array.isArray(b.diet) ? b.diet.map(function (d) { return clean_(d, 40); }).filter(Boolean).join(", ") : clean_(b.diet, 200)) : "",
     DietNote: attending === "yes" ? clean_(b.dietNote, 300) : "",
     Email: clean_(b.email, 120).toLowerCase(),
@@ -276,7 +286,39 @@ function guessOut_(q) { return { name: q.Name, date: q.Date, timeOfDay: q.TimeOf
 function rsvpOut_(r) {
   return { token: r.Token, name: r.Name, attending: r.Attending, adults: Number(r.Adults) || 0, kids: Number(r.Kids) || 0,
     diet: String(r.Diet || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean), dietNote: r.DietNote || "",
-    email: r.Email || "", phone: r.Phone || "", note: r.Note || "", createdAt: r.CreatedAt, updatedAt: r.UpdatedAt };
+    email: r.Email || "", phone: r.Phone || "", note: r.Note || "", party: partyFromString_(r.Party), createdAt: r.CreatedAt, updatedAt: r.UpdatedAt };
+}
+
+/* Party helpers: "Meera (adult); Arjun (child, 6); Anika (child, under 1)" <-> [{name, type, age}] */
+function cleanParty_(list) {
+  if (!Array.isArray(list)) return [];
+  return list.slice(0, 12).map(function (m) {
+    m = m || {};
+    var type = String(m.type) === "child" ? "child" : "adult";
+    var age = clean_(m.age, 12);
+    if (type !== "child") age = "";
+    return { name: clean_(m.name, 60), type: type, age: age };
+  });
+}
+function partyToString_(list) {
+  return (list || []).map(function (m) {
+    var label = (m.name || (m.type === "child" ? "child" : "guest")).replace(/[();]/g, "");
+    return label + " (" + m.type + (m.age ? ", " + m.age.toLowerCase() : "") + ")";
+  }).join("; ");
+}
+function partyFromString_(str) {
+  var out = [];
+  String(str || "").split(";").forEach(function (part) {
+    var m = part.trim().match(/^(.*?)\s*\((adult|child)(?:,\s*(.+?))?\)$/i);
+    if (!m) return;
+    var age = m[3] ? m[3].trim() : "";
+    if (/^under 1$/i.test(age)) age = "Under 1";
+    out.push({ name: m[1].trim(), type: m[2].toLowerCase(), age: age });
+  });
+  return out;
+}
+function partyLabel_(list) {
+  return (list || []).map(function (m) { return (m.name || (m.type === "child" ? "child" : "guest")) + (m.age ? " (" + m.age.toLowerCase() + ")" : ""); }).join(", ");
 }
 
 /* =========================================================================
@@ -309,7 +351,8 @@ function adminOp_(b, s) {
     case "sendInvites": return sendBatch_("invite", b.tokens || [], s);
     case "sendReminders": return sendBatch_("reminder", b.tokens || [], s);
     case "sendDayBefore": return sendBatch_("dayBefore", b.tokens || [], s);
-    case "markInvited": return markGuests_(b.tokens || [], "InvitedAt");
+    case "markInvited": return markGuests_(b.tokens || [], "InvitedAt", now_());
+    case "clearInvited": return markGuests_(b.tokens || [], "InvitedAt", "");
     case "sendTest": return sendTest_(String(b.kind || "invite"), s);
     default: throw new Error("Unknown op: " + op);
   }
@@ -374,11 +417,11 @@ function updateSettings_(obj) {
   return { ok: true, settings: getSettings_() };
 }
 
-function markGuests_(tokens, col) {
+function markGuests_(tokens, col, value) {
   var sh = sheet_("Guests"), n = 0;
   tokens.forEach(function (t) {
     var row = findRowIndex_(sh, 1, clean_(t, 40));
-    if (row) { sh.getRange(row, SHEETS.Guests.indexOf(col) + 1).setValue(now_()); n++; }
+    if (row) { sh.getRange(row, SHEETS.Guests.indexOf(col) + 1).setValue(value == null ? now_() : value); n++; }
   });
   return { ok: true, marked: n };
 }
@@ -438,7 +481,7 @@ function notifyHost_(rec, s, isNew) {
   var to = s.notifyEmail || Session.getEffectiveUser().getEmail();
   var head = (isNew ? "New RSVP: " : "Updated RSVP: ") + rec.Name + " — " + (rec.Attending === "yes" ? "attending" : "not attending");
   var lines = [head, ""];
-  if (rec.Attending === "yes") lines.push("Party: " + rec.Adults + " adult(s), " + rec.Kids + " kid(s)");
+  if (rec.Attending === "yes") lines.push("Party: " + rec.Adults + " adult(s), " + rec.Kids + " kid(s)" + (rec.Party ? " — " + rec.Name + " + " + partyLabel_(partyFromString_(rec.Party)) : ""));
   if (rec.Diet || rec.DietNote) lines.push("Food: " + [rec.Diet, rec.DietNote].filter(Boolean).join(" — "));
   if (rec.Email) lines.push("Email: " + rec.Email);
   if (rec.Phone) lines.push("Phone: " + rec.Phone);
@@ -494,8 +537,9 @@ function buildEmail_(kind, guest, s, rsvp) {
     intro = (first ? first + ", " : "") + "thank you for the RSVP. We can't wait to see you. A calendar file is attached, and we'll email the address and parking details the day before.";
     cta = "View or change your RSVP"; ctaUrl = link + "#rsvp";
     if (rsvp) {
-      extra = "<p style=\"margin:0 0 8px;color:#5E554E\"><b>Your party:</b> " + rsvp.Adults + " adult(s)" + (Number(rsvp.Kids) ? ", " + rsvp.Kids + " kid(s)" : "") + (rsvp.Diet || rsvp.DietNote ? "<br><b>Food:</b> " + esc_([rsvp.Diet, rsvp.DietNote].filter(Boolean).join(", ")) : "") + "</p>";
-      textExtra = "Your party: " + rsvp.Adults + " adult(s)" + (Number(rsvp.Kids) ? ", " + rsvp.Kids + " kid(s)" : "") + (rsvp.Diet || rsvp.DietNote ? "\nFood: " + [rsvp.Diet, rsvp.DietNote].filter(Boolean).join(", ") : "");
+      var who = rsvp.Party ? "you, " + partyLabel_(partyFromString_(rsvp.Party)) : rsvp.Adults + " adult(s)" + (Number(rsvp.Kids) ? ", " + rsvp.Kids + " kid(s)" : "");
+      extra = "<p style=\"margin:0 0 8px;color:#5E554E\"><b>Your party:</b> " + esc_(who) + (rsvp.Diet || rsvp.DietNote ? "<br><b>Food:</b> " + esc_([rsvp.Diet, rsvp.DietNote].filter(Boolean).join(", ")) : "") + "</p>";
+      textExtra = "Your party: " + who + (rsvp.Diet || rsvp.DietNote ? "\nFood: " + [rsvp.Diet, rsvp.DietNote].filter(Boolean).join(", ") : "");
     }
   } else if (kind === "confirmNo") {
     subject = "Thank you, " + (first || "friend");
@@ -560,9 +604,11 @@ function ensureSheets_() {
   var ss = ss_();
   // A fresh spreadsheet made from a CSV may have the settings in "Sheet1": adopt it.
   if (!ss.getSheetByName("Settings")) {
-    var first = ss.getSheets()[0];
-    var hdr = first.getRange(1, 1, 1, 2).getValues()[0];
-    if (String(hdr[0]).toLowerCase() === "key" && String(hdr[1]).toLowerCase() === "value") first.setName("Settings");
+    var sheets = ss.getSheets();
+    for (var i = 0; i < sheets.length; i++) {
+      var hdr = sheets[i].getRange(1, 1, 1, 2).getValues()[0];
+      if (String(hdr[0]).toLowerCase() === "key" && String(hdr[1]).toLowerCase() === "value") { sheets[i].setName("Settings"); break; }
+    }
   }
   Object.keys(SHEETS).forEach(function (name) {
     var sh = ss.getSheetByName(name);
@@ -575,6 +621,17 @@ function ensureSheets_() {
       sh.getRange(1, 1, 1, SHEETS[name].length).setValues([SHEETS[name]]).setFontWeight("bold");
       sh.setFrozenRows(1);
       sh.getRange(1, 1, sh.getMaxRows(), SHEETS[name].length).setNumberFormat("@");
+    } else if (name !== "Settings") {
+      // Add any columns introduced after the tab was created (appended on the right; existing data is untouched).
+      var have = sh.getRange(1, 1, 1, Math.max(sh.getLastColumn(), 1)).getValues()[0].map(function (h) { return String(h); });
+      SHEETS[name].forEach(function (col, idx) {
+        if (have.indexOf(col) < 0) {
+          var c = Math.max(have.length, idx) + 1;
+          sh.getRange(1, c).setValue(col).setFontWeight("bold");
+          sh.getRange(1, c, sh.getMaxRows(), 1).setNumberFormat("@");
+          have[c - 1] = col;
+        }
+      });
     }
   });
 }

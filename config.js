@@ -8,7 +8,7 @@ window.SHOWER_CONFIG = {
   // Paste the Apps Script "Web app" URL here after deploying it (see DEPLOY.md).
   appsScriptUrl: "https://script.google.com/macros/s/AKfycbzikVYb2LfGScYTr6LqSH3eCuOUzNo2Q3I3jnLmMXVbKCBZQ0XEBzxTyEFCUFnKXoLR6A/exec",
   // The public address of this site once it is live (used in emails and share links).
-  siteUrl: "https://sahitg.github.io/baby-shower/",
+  siteUrl: "https://sahitg.github.io/babyshower/",
 
   parents: ["Rachana", "Sahit"],
   familyName: "Garapati",
@@ -17,7 +17,7 @@ window.SHOWER_CONFIG = {
 
   date: "2026-10-31",          // YYYY-MM-DD
   startTime: "11:00",          // 24h, local to timeZone
-  endTime: "16:00",
+  endTime: "15:00",
   timeZone: "America/Los_Angeles",
   rsvpBy: "2026-10-27",
 
@@ -45,16 +45,16 @@ window.SHOWER_CONFIG = {
 
   schedule: [
     ["11:00", "Welcome drinks & snacks"],
-    ["12:00", "Lunch"],
-    ["1:00",  "Games & the guessing board"],
-    ["2:30",  "Cake, wishes & a few words"],
-    ["4:00",  "Farewell"]
+    ["12:00", "Games & the guessing board"],
+    ["1:00",  "Lunch"],
+    ["2:15",  "Cake, wishes & a few words"],
+    ["3:00",  "Farewell"]
   ],
 
   photoUrl: "",
 
   // Message templates for text / WhatsApp. {first} and {link} are filled in per guest.
-  smsTemplate: "Hi {first}! Rachana and I are hosting a baby shower on Sat, Oct 31 (11am–4pm) near Snoqualmie and would love for you to come. All the details + RSVP are here: {link}",
-  reminderTemplate: "Hi {first}, just a nudge: we're still hoping you can join us for the baby shower on Sat, Oct 31. Could you RSVP by Oct 24? {link}",
-  dayBeforeTemplate: "Hi {first}! See you tomorrow at the baby shower, 11am–4pm. Address and parking details are here: {link}"
+  smsTemplate: "Hi {first}! Rachana and I are hosting a baby shower on Sat, Oct 31 (11am–3pm) at The Club at Snoqualmie Ridge and would love for you to come. All the details + RSVP are here: {link}",
+  reminderTemplate: "Hi {first}, just a nudge: we're still hoping you can join us for the baby shower on Sat, Oct 31. Could you RSVP by Oct 27? {link}",
+  dayBeforeTemplate: "Hi {first}! See you tomorrow at the baby shower, 11am–3pm. Address and parking details are here: {link}"
 };
