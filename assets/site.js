@@ -341,7 +341,7 @@
     const name = $("#f-name").value.trim();
     const attending = attendingValue();
     const email = $("#f-email").value.trim();
-    const phone = $("#f-phone").value.trim();
+    const phone = (p => { let d = p.replace(/\D/g, ""); if (d.length === 11 && d[0] === "1") d = d.slice(1); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : p; })($("#f-phone").value.trim());
     $("#f-name").removeAttribute("aria-invalid"); $("#f-email").removeAttribute("aria-invalid"); $("#f-phone").removeAttribute("aria-invalid");
     if (!name) { $("#f-name").setAttribute("aria-invalid", "true"); $("#f-name").focus(); status.className = "status err"; status.textContent = "Please add your name."; return; }
     if (!attending) { status.className = "status err"; status.textContent = "Let us know if you can make it."; $("input[name=attending]").focus(); return; }

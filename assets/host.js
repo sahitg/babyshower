@@ -28,6 +28,7 @@
   function partyLabel(list) { return (list || []).map(m => (m.name || (m.type === "child" ? "child" : "guest")) + (m.age ? ` (${String(m.age).toLowerCase()})` : "")).join(", "); }
   function fmtWhen(iso) { if (!iso) return ""; const d = new Date(iso); return isNaN(d) ? String(iso) : d.toLocaleDateString("en-US", { month: "short", day: "numeric" }); }
   function digits(p) { return String(p || "").replace(/[^\d+]/g, ""); }
+  function fmtPhone(p) { const raw = String(p || "").trim(); let d = raw.replace(/\D/g, ""); if (d.length === 11 && d[0] === "1") d = d.slice(1); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : raw; }
   function waNumber(p) { let d = String(p || "").replace(/\D/g, ""); if (d.length === 10) d = "1" + d; return d; }
   async function copy(text) { try { await navigator.clipboard.writeText(text); return true; } catch (e) { const ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select(); try { document.execCommand("copy"); } catch (e2) { } ta.remove(); return true; } }
 
@@ -305,7 +306,7 @@
     const out = lines.map(l => {
       const parts = l.split(/\t|,/).map(p => p.trim());
       const g = { name: parts.shift() || "", email: "", phone: "", group: "" };
-      parts.forEach(p => { if (!p) return; if (/@/.test(p)) g.email = p; else if ((p.match(/\d/g) || []).length >= 7) g.phone = p; else if (!g.group) g.group = p; });
+      parts.forEach(p => { if (!p) return; if (/@/.test(p)) g.email = p; else if ((p.match(/\d/g) || []).length >= 7) g.phone = fmtPhone(p); else if (!g.group) g.group = p; });
       return g;
     }).filter(g => g.name);
     $("#add-preview").innerHTML = out.map(g => `<tr><td>${esc(g.name)}</td><td>${esc(g.email)}</td><td>${esc(g.phone)}</td><td>${esc(g.group)}</td></tr>`).join("");
